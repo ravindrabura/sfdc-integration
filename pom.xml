@@ -25,7 +25,7 @@
 				<version>${mule.maven.plugin.version}</version>
 				<extensions>true</extensions>
 				<configuration>
-				<cloudHubDeployemnt>
+				<cloudHubDeployment>
 				<username>ravindrabura18</username>
 				<environment>Sandbox</environment>
 				<workers>1</workers>
@@ -33,7 +33,7 @@
 				<applicationName>sfdc-integration-svc</applicationName>
 				<password>Test2019</password>
 				<muleVersion>4.2.2</muleVersion>
-				</cloudHubDeployemnt>
+				</cloudHubDeployment>
 				</configuration>
 			</plugin>
 		</plugins>
