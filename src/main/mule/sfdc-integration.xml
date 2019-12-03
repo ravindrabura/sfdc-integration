@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="09e8f324-a610-45a8-b1db-f04af398b2e4" >
+		<http:listener-connection host="0.0.0.0" port="${http.port}" />
+	</http:listener-config>
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="7d06fd95-e474-4531-9ada-3b737e60e49a" >
+		<salesforce:cached-basic-connection username="${sfdc.username}" password="${sfdc.password}" securityToken="${sfdc.token}"/>
+	</salesforce:sfdc-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="a99bd7c3-0c86-4930-aa56-fd5c5d957b3b" file="configuration.yaml" />
+	<flow name="Single" doc:id="84150210-cd2b-4e15-9af4-fb1ee3b01e5f">
+		<http:listener doc:name="Listener" doc:id="ab05c237-678a-44ab-88a6-7391df9ffb88" config-ref="HTTP_Listener_config" path="/api/v1/single" />
+		<ee:transform doc:name="Transform Message" doc:id="8c2f874f-5cee-4367-9908-c01d2c65d0c7">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+	Email:payload.Email,
+	FirstName:payload.FirstName,
+	LastName:payload.LastName,
+	Phone:payload.Phone
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+		<salesforce:create-single doc:name="Create single" doc:id="df5bac39-6e4b-4a33-bdae-4f780b1ea695" config-ref="Salesforce_Config" type="Contact" />
+		<ee:transform doc:name="Transform Message" doc:id="27fc453b-691a-445f-b50d-b685230ccb4d">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="32364e76-4a14-4ce7-b3e7-ab569c0f4cff" message="#[payload]" />
+	</flow>
+	<flow name="Batch" doc:id="71b500c1-f646-4f23-83ab-b49357928f9c" >
+		<http:listener doc:name="Listener" doc:id="4859bca8-11f5-4166-8319-f7f34f5cbf9f" config-ref="HTTP_Listener_config" path="/api/v1/batch">
+		</http:listener>
+		<batch:job jobName="sfdc-integrationBatch_Job" doc:id="2535ab00-e59b-442d-b6b7-dc5b8d663eb9" >
+			<batch:process-records >
+				<batch:step name="Batch_Step" doc:id="e424587d-bbab-4892-a066-de52b18cfdab" >
+					<ee:transform doc:name="Transform Message" doc:id="8530766e-38e8-431d-bc67-8b00ab2b802d">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+	Email:payload.Email,
+	FirstName:payload.FirstName,
+	LastName:payload.LastName,
+	Phone:payload.Phone
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="d18b784a-4417-473a-a4af-df212fe65c5e" size="300">
+						<salesforce:create-multiple type="Contact" doc:name="Create multiple" doc:id="6b0efaa6-f2f5-4c1a-9a68-e7526719869a" config-ref="Salesforce_Config"/>
+						<ee:transform doc:name="Transform Message" doc:id="b350df80-e44d-4606-8599-ee85e191c05e">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+						<logger level="INFO" doc:name="Logger" doc:id="bd0c1680-2f62-4577-a32c-ec13061b4d92" message="#[payload]" />
+					</batch:aggregator>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<logger level="INFO" doc:name="Logger" doc:id="520fc0ba-5256-4275-b8c3-14814bac1536" message="Job Completed"/>
+			</batch:on-complete>
+		</batch:job>
+		<ee:transform doc:name="Transform Message" doc:id="b0d522c4-10d3-470e-a2cc-3beb0da07dab">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+	</flow>
+	<flow name="sfdc-batch" doc:id="0040cb1d-4700-4177-b006-34a1f4ebb1fa" >
+		<http:listener doc:name="Copy_of_Listener" doc:id="f819f072-eb05-4f78-a09a-01ff7dd8e04a" config-ref="HTTP_Listener_config" path="/api/v1/sfdcbatch" />
+		<logger level="INFO" doc:name="Logger"
+			doc:id="8876dd1f-ede5-4a91-bf06-3ff3d9671a3e" message='#["Received request"]' />
+		<flow-ref doc:name="Flow Reference" doc:id="743a3ae7-93ed-466b-a607-b01be5bc5c86" name="logic-CreateContact-main"/>
+		<ee:transform doc:name="json payload" doc:id="62c9f364-7370-43f5-aa22-4f95150793a7">
+			<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+vars.sfdcCreateResult]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+			</ee:variables>
+		</ee:transform>
+	</flow>
+	<flow name="logic-CreateContact-main" doc:id="ac15a6dd-6e26-4eca-bc40-32c07d4bc2a0" >
+		<logger level="INFO" doc:name="Log:Start" doc:id="4d12caf5-97ea-4fec-99c1-82854a5647a6" message='"Started Processing the main Flow"'/>
+		<ee:transform doc:name="Request payload to update sfdc" doc:id="fa6aa41f-361b-42b4-9c1d-3ace0d7878e7">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+payload map(item, index) ->
+{
+	Email:item.Email,
+	FirstName:item.FirstName,
+	LastName:item.LastName,
+	Phone:item.Phone
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+			</ee:variables>
+		</ee:transform>
+		<salesforce:create-bulk doc:name="Create bulk" doc:id="a6ad6b30-8396-423e-9788-df9f19878cfe" config-ref="Salesforce_Config" type="Contact" target="sfdcCreateResult" />
+		<salesforce:close-job doc:name="Close job" doc:id="7fb09c06-a118-4c95-8ed0-3c43207116ee" config-ref="Salesforce_Config" jobId="#[vars.sfdcCreateResult.jobId]" />
+		<logger level="INFO" doc:name="Log:JobId" doc:id="65883cbd-0dd4-4406-8dc7-68cb9fd4f448" message='#["SFDC BatchJob ID created for Contact: " ++ vars.sfdcCreateResult.JobId]'/>
+	</flow>
+</mule>

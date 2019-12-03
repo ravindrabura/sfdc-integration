@@ -1,0 +1,15 @@
+sfdc:
+  host : "https://na174.lightning.force.com/services/Soap/u/43.0"
+  username : "ravindrabura@salesforce.com"
+  password : "test2019"
+  token : "25f73aciZZzER2g5r3prhNZQM"
+  readTimeOut : "200"
+  connectionTimeout : "200"
+  wait:
+    time: "20000"
+       
+http:
+  port : "8081"
+  
+           
+           
