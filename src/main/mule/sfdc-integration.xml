@@ -61,7 +61,7 @@ output application/java
 }]]></ee:set-payload>
 						</ee:message>
 					</ee:transform>
-					<batch:aggregator doc:name="Batch Aggregator" doc:id="d18b784a-4417-473a-a4af-df212fe65c5e" size="301">
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="d18b784a-4417-473a-a4af-df212fe65c5e" size="302">
 						<salesforce:create-multiple type="Contact" doc:name="Create multiple" doc:id="6b0efaa6-f2f5-4c1a-9a68-e7526719869a" config-ref="Salesforce_Config"/>
 						<ee:transform doc:name="Transform Message" doc:id="b350df80-e44d-4606-8599-ee85e191c05e">
 						<ee:message>
