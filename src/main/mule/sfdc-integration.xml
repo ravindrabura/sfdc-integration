@@ -89,23 +89,9 @@ payload]]></ee:set-payload>
 				</ee:transform>
 	</flow>
 	<flow name="sfdc-batch" doc:id="0040cb1d-4700-4177-b006-34a1f4ebb1fa" >
-		<http:listener doc:name="Copy_of_Listener" doc:id="f819f072-eb05-4f78-a09a-01ff7dd8e04a" config-ref="HTTP_Listener_config" path="/api/v1/sfdcbatch" />
+		<http:listener doc:name="Listener" doc:id="f819f072-eb05-4f78-a09a-01ff7dd8e04a" config-ref="HTTP_Listener_config" path="/api/v1/sfdcbatch" />
 		<logger level="INFO" doc:name="Logger"
 			doc:id="8876dd1f-ede5-4a91-bf06-3ff3d9671a3e" message='#["Received request"]' />
-		<flow-ref doc:name="Flow Reference" doc:id="743a3ae7-93ed-466b-a607-b01be5bc5c86" name="logic-CreateContact-main"/>
-		<ee:transform doc:name="json payload" doc:id="62c9f364-7370-43f5-aa22-4f95150793a7">
-			<ee:message>
-					<ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-vars.sfdcCreateResult]]></ee:set-payload>
-			</ee:message>
-			<ee:variables>
-			</ee:variables>
-		</ee:transform>
-	</flow>
-	<flow name="logic-CreateContact-main" doc:id="ac15a6dd-6e26-4eca-bc40-32c07d4bc2a0" >
-		<logger level="INFO" doc:name="Log:Start" doc:id="4d12caf5-97ea-4fec-99c1-82854a5647a6" message='"Started Processing the main Flow"'/>
 		<ee:transform doc:name="Request payload to update sfdc" doc:id="fa6aa41f-361b-42b4-9c1d-3ace0d7878e7">
 			<ee:message>
 				<ee:set-payload><![CDATA[%dw 2.0
@@ -124,6 +110,16 @@ payload map(item, index) ->
 		</ee:transform>
 		<salesforce:create-bulk doc:name="Create bulk" doc:id="a6ad6b30-8396-423e-9788-df9f19878cfe" config-ref="Salesforce_Config" type="Contact" target="sfdcCreateResult" />
 		<salesforce:close-job doc:name="Close job" doc:id="7fb09c06-a118-4c95-8ed0-3c43207116ee" config-ref="Salesforce_Config" jobId="#[vars.sfdcCreateResult.jobId]" />
-		<logger level="INFO" doc:name="Log:JobId" doc:id="65883cbd-0dd4-4406-8dc7-68cb9fd4f448" message='#["SFDC BatchJob ID created for Contact: " ++ vars.sfdcCreateResult.JobId]'/>
+		<logger level="INFO" doc:name="Log:JobId" doc:id="65883cbd-0dd4-4406-8dc7-68cb9fd4f448" message='#["SFDC BatchJob ID created for Contact: " ++ vars.sfdcCreateResult.JobId]' />
+		<ee:transform doc:name="json payload" doc:id="62c9f364-7370-43f5-aa22-4f95150793a7">
+			<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+vars.sfdcCreateResult]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+			</ee:variables>
+		</ee:transform>
 	</flow>
 </mule>
